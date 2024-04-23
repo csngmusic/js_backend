@@ -1,9 +1,9 @@
 const express = require('express');
-const {MongoClient} = require('mongodb');
+const {MongoClient, ObjectId} = require('mongodb');
 
 const app = express();
 const port = 8000;
-
+app.use(express.json());
 app.use(express.static('public'))
 
 app.get('/tasks', async function(req, res) {
@@ -15,11 +15,18 @@ app.get('/tasks', async function(req, res) {
     res.send(data);
 });
 
-app.get('/tasks/:id', function(req, res) {
+app.get('/tasks/:id', async function(req, res) {
+    const client = new MongoClient('mongodb://127.0.0.1');
+    await client.connect();
+    const db = client.db('todoapp');
+    const collection = db.collection('tasks');
+    const data = await collection.findOne({_id: new ObjectId(req.params.id)});
+    res.send(data);
 });
 
 app.post('/tasks', async function(req, res) {
-    const task = {};
+    console.log(req.body);
+    const task = {...req.body, done: false};
     const client = new MongoClient('mongodb://127.0.0.1');
     await client.connect();
     const db = client.db('todoapp');
@@ -31,7 +38,13 @@ app.post('/tasks', async function(req, res) {
 app.patch('/tasks/:id', function(req, res) {
 });
 
-app.delete('/tasks/:id', function(req, res) {
+app.delete('/tasks/:id', async function(req, res) {
+    const client = new MongoClient('mongodb://127.0.0.1');
+    await client.connect();
+    const db = client.db('todoapp');
+    const collection = db.collection('tasks');
+    await collection.deleteOne({_id: new ObjectId(req.params.id)});
+    res.send({});
 });
 
 app.listen(port, function() {
